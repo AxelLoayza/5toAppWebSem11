@@ -20,6 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useData } from "@/context/DataContext"
+import { Spinner } from "@/components/ui/spinner"
+import { Alert } from "@/components/ui/alert"
 
 export function ProjectForm() {
   const [open, setOpen] = useState(false)
@@ -29,14 +32,35 @@ export function ProjectForm() {
     category: "",
     priority: "",
   })
+  const [members, setMembers] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const { addProject } = useData()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
-    
-    // Limpiar y cerrar
-    setFormData({ name: "", description: "", category: "", priority: "" })
-    setOpen(false)
+    setError(null)
+    if (!formData.name.trim()) {
+      setError("El nombre del proyecto es obligatorio")
+      return
+    }
+
+    setLoading(true)
+    addProject({
+      title: formData.name,
+      description: formData.description,
+      status: "Planificado",
+      progress: 0,
+      team: members ? members.split(",").map((s) => s.trim()).length : 0,
+      members: members ? members.split(",").map((s) => s.trim()) : [],
+    })
+      .then(() => {
+        setFormData({ name: "", description: "", category: "", priority: "" })
+        setMembers("")
+        setOpen(false)
+      })
+      .finally(() => setLoading(false))
   }
 
   return (
@@ -68,6 +92,11 @@ export function ProjectForm() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            {error ? (
+              <div>
+                <Alert type="error">{error}</Alert>
+              </div>
+            ) : null}
             <div className="grid gap-2">
               <Label htmlFor="name">
                 Nombre del Proyecto <span className="text-red-500">*</span>
@@ -88,6 +117,11 @@ export function ProjectForm() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="members">Miembros (separados por coma)</Label>
+              <Input id="members" placeholder="María, Juan" value={members} onChange={(e) => setMembers(e.target.value)} />
             </div>
 
             <div className="grid gap-2">
@@ -132,10 +166,13 @@ export function ProjectForm() {
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
               Cancelar
             </Button>
-            <Button type="submit">Crear Proyecto</Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? <Spinner className="h-4 w-4 mr-2" /> : null}
+              Crear Proyecto
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

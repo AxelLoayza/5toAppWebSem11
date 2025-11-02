@@ -13,53 +13,10 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
-const tasks = [
-  {
-    id: 1,
-    title: "Implementar autenticación",
-    project: "E-commerce Platform",
-    status: "En progreso",
-    priority: "Alta",
-    assignee: "María García",
-    dueDate: "2025-11-15",
-  },
-  {
-    id: 2,
-    title: "Diseñar pantalla de perfil",
-    project: "Mobile App",
-    status: "Pendiente",
-    priority: "Media",
-    assignee: "Ana López",
-    dueDate: "2025-11-20",
-  },
-  {
-    id: 3,
-    title: "Configurar CI/CD",
-    project: "API Gateway",
-    status: "Completado",
-    priority: "Alta",
-    assignee: "Carlos Ruiz",
-    dueDate: "2025-11-10",
-  },
-  {
-    id: 4,
-    title: "Optimizar queries SQL",
-    project: "E-commerce Platform",
-    status: "En progreso",
-    priority: "Urgente",
-    assignee: "Juan Pérez",
-    dueDate: "2025-11-12",
-  },
-  {
-    id: 5,
-    title: "Documentar API endpoints",
-    project: "API Gateway",
-    status: "Pendiente",
-    priority: "Baja",
-    assignee: "Laura Martínez",
-    dueDate: "2025-11-25",
-  },
-]
+import { useState } from "react"
+import { useData } from "@/context/DataContext"
+import Pagination from "@/components/ui/pagination"
+
 
 const statusVariant = (status: string) => {
   switch (status) {
@@ -90,6 +47,14 @@ const priorityVariant = (priority: string) => {
 }
 
 export function TasksTable() {
+  const { tasks, deleteTask, projects, team } = useData()
+  const [page, setPage] = useState(1)
+  const perPage = 5
+
+  const total = Math.max(1, Math.ceil(tasks.length / perPage))
+  const start = (page - 1) * perPage
+  const pageItems = tasks.slice(start, start + perPage)
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -109,30 +74,36 @@ export function TasksTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {tasks.map((task) => (
+          {pageItems.map((task) => (
             <TableRow key={task.id}>
               <TableCell>
                 <Checkbox />
               </TableCell>
-              <TableCell className="font-medium">{task.title}</TableCell>
-              <TableCell>{task.project}</TableCell>
+              <TableCell className="font-medium">{task.description}</TableCell>
+              <TableCell>{projects.find((p) => p.id === task.projectId)?.title ?? "-"}</TableCell>
               <TableCell>
-                <Badge variant={statusVariant(task.status)}>{task.status}</Badge>
+                <Badge variant={statusVariant(task.status ?? "")}>{task.status ?? "-"}</Badge>
               </TableCell>
               <TableCell>
-                <Badge variant={priorityVariant(task.priority)}>{task.priority}</Badge>
+                <Badge variant={priorityVariant(task.priority ?? "")}>{task.priority ?? "-"}</Badge>
               </TableCell>
-              <TableCell>{task.assignee}</TableCell>
-              <TableCell>{task.dueDate}</TableCell>
+              <TableCell>{team.find((m) => m.userId === task.userId)?.name ?? "-"}</TableCell>
+              <TableCell>{task.dateline ?? "-"}</TableCell>
               <TableCell className="text-right">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" onClick={() => {}}>
                   Editar
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => deleteTask(task.id)}>
+                  Eliminar
                 </Button>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+      <div className="p-4">
+        <Pagination page={page} total={total} onChange={(p) => setPage(p)} />
+      </div>
     </div>
   )
 }
